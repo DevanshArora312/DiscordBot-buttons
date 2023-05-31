@@ -42,11 +42,8 @@ class Pause(discord.ui.View):
         # Global_Pause = False
         # global Global_skipped 
         # Global_skipped = True
-        try:
-            await Music.skipcall(self.ctx)
-        except:
-            await self.ctx.send("hello")
-        await interaction.response.defer()
+        print("choro bc")
+        await interaction.response.send_message("")
 
 class Music(commands.Cog):
     def __init__(self,bot):
@@ -80,11 +77,10 @@ class Music(commands.Cog):
         return {'source' : info['formats'][0]['url'],'title':info['title'],'thumbnail':info['thumbnails'][0]['url']}
     
     def my_after(self,ctx):
-        print("workks")
-        coro = self.play_next(ctx)
-        fut = asyncio.run_coroutine_threadsafe(coro)
+        fut = asyncio.run_coroutine_threadsafe(self.nowPlaying(ctx),self.bot.loop)
         try:
             fut.result()
+            return
         except:
             pass
 
@@ -109,7 +105,7 @@ class Music(commands.Cog):
                     return
             
             try:
-                self.vc.play(discord.FFmpegPCMAudio(m_url, **self.FFMPEG_sett), after=lambda e: self.my_after(ctx))
+                self.vc.play(discord.FFmpegPCMAudio(m_url, **self.FFMPEG_sett), after=lambda e: self.play_next(ctx))
                 await self.nowPlaying(ctx)
                 
             except:
@@ -121,26 +117,28 @@ class Music(commands.Cog):
             Global_play = False
 
 
-    async def play_next (self,ctx):
-        # print("workks")
-        #global Global_skipped
+    def play_next (self,ctx):
+        print("works in")
+        global Global_skipped
         global Global_play
         self.Playing = Global_play
         self.Paused = Global_Pause
-        #self.if_skipped = Global_skipped
-        # Executed after one song is completed or skipped
+        self.if_skipped = Global_skipped
         # The first playing song is removed from the queue and the second song is now at 0th index
-    
-        self.Queue.pop(0)
-        #self.if_skipped = False
-        #Global_skipped = False
+        if not self.if_skipped:
+            self.Queue.pop(0)
+        self.if_skipped = False
+        Global_skipped = False
         if len(self.Queue) > 0:
             self.Playing = True
-            
             Global_play = True
-            await self.nowPlaying(ctx)
+            
             m_url = self.Queue[0][0]['source']
-            self.vc.play(discord.FFmpegPCMAudio(m_url, **self.FFMPEG_sett), after=lambda e: self.my_after(ctx))
+            self.vc.play(discord.FFmpegPCMAudio(m_url, **self.FFMPEG_sett), after=lambda e: self.play_next(ctx))
+            try:
+                self.my_after(ctx)
+            except:
+                print("ye nhi chalrha")
         else:
             self.Playing = False
             # global Global_play
@@ -252,15 +250,14 @@ class Music(commands.Cog):
         if self.vc != None:
             if self.Playing:
                 self.vc.stop()
-            #self.if_skipped = True
-            
-            #Global_skipped = True
-            await ctx.send(f"Skipped ```{self.Queue[0][0]['title']}```")
+            self.if_skipped = True
+            Global_skipped = True
+            await ctx.send(f"Skipped ```{self.Queue.pop(0)[0]['title']}```")
             self.Playing = False
             self.Paused = False
             Global_Pause = False
             Global_play = False
-            await self.play_next(ctx)
+            await self.play_music(ctx)
         
     @commands.command(name="join",help="")
     async def join(self,ctx,*args):
