@@ -4,10 +4,15 @@ from discord.ext import commands
 from discord import FFmpegPCMAudio
 from youtube_dl import YoutubeDL
 
-
 Global_play = False
 Global_Pause = False
-Global_skipped = False
+
+
+
+###########################################
+BOT_ID = 1095747361164230826 
+###########################################
+
 #Imported Required modules for code and created music class for writing the Music cog
 class Pause(discord.ui.View):
     def __init__(self,vc,ctx,play,pause):
@@ -24,6 +29,7 @@ class Pause(discord.ui.View):
         Global_Pause = True
         global Global_play
         Global_play = False
+        
         await interaction.response.defer()
     @discord.ui.button(label="Play" ,emoji = "▶",row=0, style=discord.ButtonStyle.green)
     async def playBut(self,interaction: discord.Interaction,button: discord.ui.Button):
@@ -35,21 +41,14 @@ class Pause(discord.ui.View):
         await interaction.response.defer()
     @discord.ui.button(label="Skip" ,emoji = "⏭",row=0, style=discord.ButtonStyle.green)
     async def skipBut(self,interaction: discord.Interaction,button: discord.ui.Button):
-        # self.vc.stop()
-        # global Global_play
-        # Global_play = True
-        # global Global_Pause
-        # Global_Pause = False
-        # global Global_skipped 
-        # Global_skipped = True
-        print("choro bc")
-        await interaction.response.send_message("")
-
+        await self.ctx.send("!s",delete_after = 0.1)
+        await interaction.response.edit_message(view = None)
+        await interaction.response.defer()
+        
 class Music(commands.Cog):
     def __init__(self,bot):
         
         #basic variables and objects -- self explanatory
-        
         self.bot = bot
         self.Playing = False
         self.Paused = False
@@ -89,7 +88,7 @@ class Music(commands.Cog):
         global Global_play
         self.Playing = Global_play
         self.Paused = Global_Pause
-        self.if_skipped = Global_skipped
+        
         if len(self.Queue) > 0:
             self.Playing = True
             
@@ -115,20 +114,27 @@ class Music(commands.Cog):
             self.Playing = False
             # global Global_play
             Global_play = False
-
+    
+    @commands.Cog.listener()
+    async def on_message(self,message):
+        
+        if message.content == "!s" and message.author.id == BOT_ID:
+            #print(f"Works and {message.author.id}")
+            ctx = await self.bot.get_context(message)
+            await self.skip(ctx)
 
     def play_next (self,ctx):
-        print("works in")
-        global Global_skipped
+        
+        
         global Global_play
         self.Playing = Global_play
         self.Paused = Global_Pause
-        self.if_skipped = Global_skipped
+        
         # The first playing song is removed from the queue and the second song is now at 0th index
         if not self.if_skipped:
             self.Queue.pop(0)
         self.if_skipped = False
-        Global_skipped = False
+        
         if len(self.Queue) > 0:
             self.Playing = True
             Global_play = True
@@ -150,7 +156,7 @@ class Music(commands.Cog):
         global Global_play
         self.Playing = Global_play
         self.Paused = Global_Pause
-        self.if_skipped = Global_skipped
+        
         query =" ".join(args)
         voice_channel = ctx.author.voice.channel
         if voice_channel is None:
@@ -159,7 +165,7 @@ class Music(commands.Cog):
             self.vc.resume ()
             self.Paused = False
             self.Playing = True
-            
+
             Global_Pause = False
             Global_play = True
         else:
@@ -197,7 +203,7 @@ class Music(commands.Cog):
         global Global_play
         self.Playing = Global_play
         self.Paused = Global_Pause
-        self.if_skipped = Global_skipped
+        
         # Pauses the song if playing AND resumes the song if paused
         voice_channel = ctx.author.voice.channel
         
@@ -226,7 +232,7 @@ class Music(commands.Cog):
         global Global_play
         self.Playing = Global_play
         self.Paused = Global_Pause
-        self.if_skipped = Global_skipped
+        
         #Resumes the song if paused
         
         if self.Paused:
@@ -241,17 +247,17 @@ class Music(commands.Cog):
     async def skip(self, ctx, *args):
         global Global_Pause
         global Global_play
-        global Global_skipped
+        
         self.Playing = Global_play
         self.Paused = Global_Pause
-        self.if_skipped = Global_skipped
+        
         #Skips the current playing song and pops it form the queue
         
         if self.vc != None:
             if self.Playing:
                 self.vc.stop()
             self.if_skipped = True
-            Global_skipped = True
+            
             await ctx.send(f"Skipped ```{self.Queue.pop(0)[0]['title']}```")
             self.Playing = False
             self.Paused = False
@@ -296,9 +302,7 @@ class Music(commands.Cog):
             self.Queue = []
             await ctx.send("Music queue cleared")
 
-    @classmethod
-    async def skipcall(self,ctx):
-        await self.play_music(ctx)
+    
     @commands.command (name = "leave", help = "Removes the bot from the voice channel")
     async def leave(self,ctx):
         
