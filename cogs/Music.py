@@ -12,8 +12,8 @@ Global_Queue = {}
 
 VoiceClient = {}
 
-###########################################
-BOT_ID = 1095747361164230826
+#####################///YOUR BOT'S ID SHOULD BE HERE FOR PROPER FUNCTIONING OF BOT///######################
+BOT_ID = 1095747361164230826 
 ###########################################
 
 #Imported Required modules for code and created music class for writing the Music cog
